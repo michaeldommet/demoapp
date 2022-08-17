@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "todo.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels:
+    {{- include "todo.labels" . | nindent 4 }}
+  {{- if eq .Values.service.loadBalancerType "Internal" }}
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+  {{- end}}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+  selector:
+    app: todo
