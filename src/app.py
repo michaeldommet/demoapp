@@ -15,22 +15,26 @@ provider = TracerProvider()
 trace.set_tracer_provider(provider)
 
 # 2. Set up OTLP Exporter
-otlp_exporter = OTLPSpanExporter(
-    # optional: configure OTLP exporter endpoint
-    # endpoint="http://localhost:4317"
-)
-provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+# Ensure OpenTelemetry exporter endpoint is configurable
+#otlp_endpoint = os.environ.get('OTLP_ENDPOINT', 'http://localhost:4317')
+#otlp_exporter = OTLPSpanExporter(endpoint=otlp_endpoint)
+#provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
 
 import os
 
 app = Flask(__name__)
 
 # --- Database Configuration ---
-db_user = os.environ.get('MYSQL_USER', 'root')
-db_password = os.environ.get('MYSQL_PASSWORD', 'password')
-db_host = os.environ.get('MYSQL_SERVER', 'localhost')
-db_name = os.environ.get('MYSQL_DATABASE', 'appdb')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}/{db_name}'
+# Use SQLite for local testing if FLASK_ENV is set to 'development'
+if os.environ.get('FLASK_ENV') == 'development':
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+else:
+    db_user = os.environ.get('MYSQL_USER', 'root')
+    db_password = os.environ.get('MYSQL_PASSWORD', 'password')
+    db_host = os.environ.get('MYSQL_SERVER', 'localhost')
+    db_name = os.environ.get('MYSQL_DATABASE', 'appdb')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+mysqlconnector://{db_user}:{db_password}@{db_host}/{db_name}'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -41,10 +45,11 @@ with app.app_context():
 
 tracer = trace.get_tracer(__name__)
 
+# Ensure the `Todo` model matches the database schema
 class Todo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100))
-    complete = db.Column(db.Boolean)
+    title = db.Column(db.String(100), nullable=False)
+    complete = db.Column(db.Boolean, default=False)
     date_created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
 @app.route('/')
@@ -63,13 +68,15 @@ def add():
         db.session.commit()
         return redirect(url_for("index"))
 
-@app.route("/update/<int:todo_id>")
-def update(todo_id):
-    # Update item
-    todo = Todo.query.filter_by(id=todo_id).first()
+# Replace legacy `Query.get()` with `Session.get()`
+@app.route('/toggle/<int:todo_id>')
+def toggle(todo_id):
+    todo = db.session.get(Todo, todo_id)
+    if todo is None:
+        return "Todo not found", 404
     todo.complete = not todo.complete
     db.session.commit()
-    return redirect(url_for("index"))
+    return redirect(url_for('index'))
 
 @app.route("/delete/<int:todo_id>")
 def delete(todo_id):
@@ -79,7 +86,25 @@ def delete(todo_id):
     db.session.commit()
     return redirect(url_for("index"))
 
+@app.route("/edit/<int:todo_id>", methods=["GET", "POST"])
+def edit(todo_id):
+    todo = db.session.get(Todo, todo_id)
+    if todo is None:
+        return "Todo not found", 404
+
+    if request.method == "POST":
+        # Update the task title
+        new_title = request.form.get("title")
+        todo.title = new_title
+        db.session.commit()
+        return redirect(url_for("index"))
+
+    # Render the edit form
+    return render_template("edit.html", todo=todo)
+
 if __name__ == '__main__':
     with app.app_context():
+        # Drop and recreate the database for local testing
+        db.drop_all()
         db.create_all()
     app.run(debug=True, host='0.0.0.0')

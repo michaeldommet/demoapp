@@ -1,3 +1,4 @@
+# This ingress exposes the app externally. Use nginx for kind, alb/nginx for EKS.
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "todo.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}

@@ -1,3 +1,4 @@
+# This network policy restricts access to MySQL. Optional for kind, recommended for EKS.
 {{- if and .Values.mysql.enabled .Values.mysql.networkPolicy.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

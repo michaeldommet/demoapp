@@ -1,0 +1,42 @@
+# values.local.yaml
+
+# General settings
+replicaCount: 1
+
+image:
+  repository: your-docker-repo/your-app
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5000
+  targetPort: 5000
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    kubernetes.io/ingress.class: alb
+  hosts:
+    - host: todo.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# MySQL configuration
+mysql:
+  enabled: true
+  rootPassword: root
+  database: appdb
+  user: testuser
+  password: testpassword
+  auth:
+    existingSecret: "mysql-secret"
+
+# External database configuration
+externalDatabase:
+  enabled: false

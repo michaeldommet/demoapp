@@ -98,10 +98,10 @@ Return the configmap with the MySQL Primary configuration
 Return the secret with MySQL credentials
 */}}
 {{- define "mysql.secretName" -}}
-    {{- if .Values.auth.existingSecret -}}
-        {{- printf "%s" (tpl .Values.auth.existingSecret $) -}}
+    {{- if .Values.mysql.auth.existingSecret -}}
+        {{- printf "%s" (tpl .Values.mysql.auth.existingSecret $) -}}
     {{- else -}}
-        {{- printf "%s" (include "common.names.fullname" .) -}}
+        mysql-secret
     {{- end -}}
 {{- end -}}
 

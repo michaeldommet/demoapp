@@ -1,3 +1,4 @@
+# This statefulset deploys MySQL in-cluster. Use for local/kind or EKS if not using RDS/external DB.
 {{- if .Values.mysql.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
@@ -152,4 +153,9 @@ spec:
         {{- if .Values.mysql.primary.persistence.selector }}
         selector: {{- include "common.tplvalues.render" (dict "value" .Values.mysql.primary.persistence.selector "context" $) | nindent 10 }}
         {{- end -}}
+        {{- if .Values.mysql.primary.persistence.storageClass }}
+        storageClassName: {{ .Values.mysql.primary.persistence.storageClass | quote }}
+        {{- else }}
+        storageClassName: "standard"
+        {{- end }}
 {{- end -}}

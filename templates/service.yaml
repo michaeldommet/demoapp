@@ -18,3 +18,4 @@ spec:
       targetPort: {{ .Values.service.targetPort }}
   selector:
     app: todo
+# This service exposes the main application. Required for all environments.
