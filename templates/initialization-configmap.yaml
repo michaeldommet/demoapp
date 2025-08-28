@@ -1,3 +1,4 @@
+{{- if .Values.mysql.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,3 +13,4 @@ data:
   initdb.sql: |-
     CREATE DATABASE appdb;
     CREATE TABLE appdb.todo (id INT, content TEXT(256), date_created DATETIME, PRIMARY KEY (id));
+{{- end }}

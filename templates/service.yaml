@@ -5,8 +5,10 @@ metadata:
   namespace: {{ include "common.names.namespace" . | quote }}
   labels:
     {{- include "todo.labels" . | nindent 4 }}
-  {{- if eq .Values.service.loadBalancerType "Internal" }}
   annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.service.targetPort | quote }}
+  {{- if eq .Values.service.loadBalancerType "Internal" }}
     networking.gke.io/load-balancer-type: "Internal"
   {{- end}}
 spec:

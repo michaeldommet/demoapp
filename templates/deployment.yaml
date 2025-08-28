@@ -32,7 +32,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           env:
-            # Use secret in real usage
+            {{- if .Values.mysql.enabled }}
             - name: MYSQL_USER
               value: "root"
             - name: MYSQL_PASSWORD
@@ -41,7 +41,18 @@ spec:
                   name: {{ template "mysql.secretName" . }}
                   key: mysql-root-password
             - name: MYSQL_SERVER
-              value: "mysql.default.svc"
+              value: "mysql"
+            {{- else }}
+            - name: MYSQL_USER
+              value: {{ .Values.externalDatabase.user | quote }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ if .Values.externalDatabase.existingSecret }}{{ .Values.externalDatabase.existingSecret }}{{- else }}{{ include "todo.fullname" . }}-externaldb{{- end }}
+                  key: mysql-password
+            - name: MYSQL_SERVER
+              value: {{ .Values.externalDatabase.host | quote }}
+            {{- end }}
             - name: PORT
               value: "5000"
           securityContext:

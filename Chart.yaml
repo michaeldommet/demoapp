@@ -3,7 +3,6 @@ name: todo
 description: A Helm chart for Kubernetes
 dependencies:
   - name: common
-    repository: file://../common
     tags:
       - bitnami-common
     version: 1.x.x
